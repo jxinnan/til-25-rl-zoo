@@ -263,7 +263,7 @@ class RLManager:
                 continue
             visited.add((x, y, facing))
 
-            if is_goal(x, y) and (x, y) != current_pos:
+            if is_goal(x, y) and (x, y) != tuple(current_pos):
                 score = self._evaluate_target_score(x, y)
                 if score > 0:
                     candidates.append((score - turn_cost(actions), actions))
