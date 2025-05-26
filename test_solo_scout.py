@@ -40,8 +40,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("scout_name")
     parser.add_argument("-n", "--no_of_matches", type=int, default=1000)
-    parser.add_argument("-g", "--test_with_guards")
-    parser.add_argument("--hybrid")
+    parser.add_argument("-g", "--test_with_guards", action='store_true')
+    parser.add_argument("--hybrid", action='store_true')
     args = parser.parse_args()
 
     if args.hybrid:
