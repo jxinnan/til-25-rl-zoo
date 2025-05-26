@@ -62,18 +62,32 @@ def main():
             scout_agents = [RLManager() for RLManager in scout_managers]
             guard_agents = [RLManager() for RLManager in guard_managers]
 
+            scout_idx = None
+
             for agent in env.agent_iter():
                 agent_idx = int(agent[-1])
                 observation, reward, termination, truncation, info = env.last()
 
                 if observation["scout"] == 1:
+                    if scout_idx == None:
+                        scout_idx = agent_idx
                     match_scout_rewards[agent_idx] += reward
                 else:
                     match_guard_rewards[agent_idx] += reward
 
                 if termination or truncation:
+                    scout_ep_len[scout_idx, seed_idx] = observation["step"]
+
+                    for key in env.rewards:
+                        key_idx = int(key[-1])
+                        if key_idx == agent_idx:
+                            continue
+                        elif key_idx == scout_idx:
+                            match_scout_rewards[key_idx] += env.rewards[key]
+                        else:
+                            match_guard_rewards[key_idx] += env.rewards[key]
+
                     env.reset()
-                    scout_ep_len[agent_idx, seed_idx] = observation["step"] - 1
                     break
                 else:
                     if observation["scout"] == 1:
@@ -94,7 +108,7 @@ def main():
                     str(np.min(total_scout_rewards[agent_idx])),
                     str(np.max(total_scout_rewards[agent_idx])),
                     str(np.mean(scout_ep_len[agent_idx])),
-                    str((scout_ep_len == 100).sum()),
+                    str((scout_ep_len[agent_idx] == 100).sum()/SAMPLE_SIZE),
                 ])
             for agent_idx in range(len(scout_managers))
         ]
