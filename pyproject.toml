@@ -12,19 +12,19 @@ dependencies = [
     "rich>=14.0.0",
     "stable-baselines3>=2.6.0",
     "supersuit==3.9.3",
-    "torch>=2.7.0",
+    "torch>=2.6.0",
     "tqdm>=4.67.1",
 ]
 
 [[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cpu" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
 torchvision = [
-  { index = "pytorch-cpu" },
+  { index = "pytorch-cu124", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
