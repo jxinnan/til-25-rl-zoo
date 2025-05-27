@@ -65,6 +65,7 @@ def main():
         RewardNames.WALL_COLLISION,
         RewardNames.STATIONARY_PENALTY,
         "custom_THREE_TURNS",
+        "custom_DEADEND_BASE",
     ]
 
     # max 15 per step - 4-bits
@@ -81,6 +82,7 @@ def main():
         RewardNames.WALL_COLLISION,
         RewardNames.STATIONARY_PENALTY,
         "custom_THREE_TURNS",
+        "custom_DEADEND_BASE",
         RewardNames.SCOUT_TRUNCATION,
     ]
 

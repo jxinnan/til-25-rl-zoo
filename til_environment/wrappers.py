@@ -52,6 +52,9 @@ class EvalWrapper(BaseWrapper[AgentID, ObsType, ActionType]):
 
         self.true_wall_grid = np.zeros((self.size, self.size, 4), dtype=np.uint8)
 
+        # deadend info - 1 for every step into a deadend
+        self.true_deadend_depth_grid = np.zeros((self.size, self.size), dtype=np.uint8)
+
         self.consecutive_turns = 0
     
     def step(self, the_chosen_action):
@@ -180,6 +183,11 @@ class EvalWrapper(BaseWrapper[AgentID, ObsType, ActionType]):
         curr_direction = observation["direction"] # right down left up
         curr_location = observation["location"]
 
+        if self.true_deadend_depth_grid[*curr_location] > 0:
+            reward += self.rewards_dict.get(
+                "custom_DEADEND_BASE", 0
+            )
+
         # rotate clockwise so absolute north faces up
         new_gridview = np.rot90(new_gridview, k=curr_direction)
 
@@ -241,6 +249,50 @@ class EvalWrapper(BaseWrapper[AgentID, ObsType, ActionType]):
         # global information for god guards
         for x, y in np.ndindex((self.size, self.size)):
             self.true_wall_grid[x,y] = np.unpackbits(self.state()[x, y])[:4]
+        
+        self.true_deadend_depth_grid = np.zeros((self.size, self.size), dtype=np.uint8)
+        # deadend depth information
+        deadend_final_tiles = []
+        for x, y in np.ndindex((self.size, self.size)): # find all deadends
+            if np.count_nonzero(self.true_wall_grid[x,y]) >= 3: # deadend destination
+                deadend_final_tiles.append((x,y,np.where(self.true_wall_grid[x,y] == 0)[0]))
+
+        deadend_all_tiles = [[] for i in range(len(deadend_final_tiles))]
+        for i in range(len(deadend_final_tiles)):
+            curr_x = deadend_final_tiles[i][0]
+            curr_y = deadend_final_tiles[i][1]
+            curr_opening_dir = deadend_final_tiles[i][2][0]
+
+            while True: # alleyway with two openings
+                deadend_all_tiles[i].insert(0, (curr_x, curr_y))
+                match curr_opening_dir:
+                    case 0: # top
+                        curr_y -= 1
+                        invalid_next_opening_dir = 2
+                    case 1: # left
+                        curr_x -= 1
+                        invalid_next_opening_dir = 3
+                    case 2: # bottom
+                        curr_y += 1
+                        invalid_next_opening_dir = 0
+                    case 3: # right
+                        curr_x += 1
+                        invalid_next_opening_dir = 1
+                
+                next_opening_arr = np.where(self.true_wall_grid[curr_x,curr_y] == 0)[0]
+                if next_opening_arr.shape[0] > 2: # out of deadend
+                    break
+                
+                for opening in next_opening_arr: # find other opening
+                    if opening != invalid_next_opening_dir:
+                        curr_opening_dir = opening
+                        break
+        
+        for deadend_list in deadend_all_tiles:
+            for i in range(len(deadend_list)):
+                x = deadend_list[i][0]
+                y = deadend_list[i][1]
+                self.true_deadend_depth_grid[x, y] = i + 1
 
         # reset observation shaping
         self.obs_wall_top_space = np.zeros((self.size, self.size), dtype=np.uint8)
