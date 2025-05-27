@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from .A2CWithMapV7 import A2CWithMap
-
+from typing import Union
 
 class CNNPPOPlayer:
     def __init__(self, model_path, device="cuda:0"):
@@ -28,5 +28,6 @@ class CNNPPOPlayer:
         scout = torch.tensor(observation["scout"], dtype=torch.uint8, device=self.device).unsqueeze(0)
         step = torch.tensor(observation["step"], dtype=torch.uint8, device=self.device).unsqueeze(0)
         action_logits, _, next_map_memory = self.model(viewcone, direction, location, scout, step, self.map_memory)
+        self.map_memory = next_map_memory
         action = torch.argmax(action_logits, dim=-1).item()
         return action

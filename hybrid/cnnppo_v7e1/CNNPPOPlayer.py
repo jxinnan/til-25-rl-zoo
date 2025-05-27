@@ -28,5 +28,6 @@ class CNNPPOPlayer:
         scout = torch.tensor(observation["scout"], dtype=torch.uint8, device=self.device).unsqueeze(0)
         step = torch.tensor(observation["step"], dtype=torch.uint8, device=self.device).unsqueeze(0)
         action_logits, _, next_map_memory = self.model(viewcone, direction, location, scout, step, self.map_memory)
+        self.map_memory = next_map_memory
         action = torch.argmax(action_logits, dim=-1).item()
         return action
