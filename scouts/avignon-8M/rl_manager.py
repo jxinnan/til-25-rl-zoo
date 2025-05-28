@@ -28,7 +28,7 @@ class RLManager:
     def __init__(self):
         # This is where you can initialize your model and any static
         # configurations.
-        self.model = DQN.load("scouts/avignon-4M/avignon_noGuards")
+        self.model = DQN.load("scouts/avignon-8M/avignon_noGuards")
         self.size = 16
 
         # observation space
