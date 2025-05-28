@@ -42,6 +42,7 @@ def main():
     parser.add_argument("-n", "--no_of_matches", type=int, default=1000)
     parser.add_argument("-g", "--test_with_guards", action='store_true')
     parser.add_argument("--hybrid", action='store_true')
+    parser.add_argument("-s", "--save", action='store_true')
     args = parser.parse_args()
 
     if args.hybrid:
@@ -244,6 +245,10 @@ def main():
                 ])
             ]
         ))
+    
+    if args.save:
+        save_path = f"logs/test_solo_scout/{'hybrid_' if args.hybrid else ''}{args.scout_name}.npz"
+        np.savez(save_path, total_guard_rewards=total_guard_rewards, total_noguard_rewards=total_noguard_rewards)
 
 if __name__ == "__main__":
     main()
