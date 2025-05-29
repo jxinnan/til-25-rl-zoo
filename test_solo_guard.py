@@ -45,7 +45,7 @@ def give_env(custom_rewards_dict = None, custom_render_mode = None, guard_classe
 
 parser = argparse.ArgumentParser()
 parser.add_argument("guard_name")
-parser.add_argument("-n", "--no_of_matches", type=int, default=100)
+parser.add_argument("-n", "--no_of_matches", type=int, default=200)
 parser.add_argument("--hybrid", action='store_true')
 parser.add_argument("-s", "--save", action='store_true')
 args = parser.parse_args()
@@ -72,7 +72,7 @@ cnnppo = getattr(import_module(f"hybrid.cnnppo_split_v1.rl_manager"), "RLManager
 helvetica = getattr(import_module(f"guards.helvetica.rl_manager"), "RLManager")
 
 TEST_SCOUTS = [
-    {"scout_class": stationary_scout},
+    # {"scout_class": stationary_scout},
     {"scout_class": wonder},
     {"scout_class": avignon},
     {"scout_class": mcts},
@@ -132,35 +132,34 @@ def run_scout_guard_pair(input_args):
     round_rewards = np.zeros((len(REWARDS_DICT),))
     round_ep_len = 0
 
-    for chosen_pos_index in range(3):
-        model = RLManager()
+    chosen_pos_index = seed%3
 
-        env = give_env(REWARDS_DICT, **scout_kwargs, **guard_kwargs)
-        obs, _info = env.reset(seed=seed, chosen_guard_index=chosen_pos_index)
+    model = RLManager()
 
-        terminated = False
-        truncated = False
-        while not terminated and not truncated:
-            action = model.rl(obs)
-            obs, reward, terminated, truncated, _info = env.step(action)
-            round_ep_len += 1
+    env = give_env(REWARDS_DICT, **scout_kwargs, **guard_kwargs)
+    obs, _info = env.reset(seed=seed, chosen_guard_index=chosen_pos_index)
 
-            for rew_idx in range(len(REWARDS)):
-                if is_set(reward, rew_idx):
-                    round_rewards[rew_idx] += 1
+    terminated = False
+    truncated = False
+    while not terminated and not truncated:
+        action = model.rl(obs)
+        obs, reward, terminated, truncated, _info = env.step(action)
+        round_ep_len += 1
 
-            for multi_rew_idx in range(len(REWARDS_MULTI_QUAD)):
-                rew_idx = multi_rew_idx * 4 + len(REWARDS)
-                round_rewards[multi_rew_idx + len(REWARDS)] += get_four_bits(reward, rew_idx)
-            
-            for multi_rew_idx in range(len(REWARDS_MULTI_OCTO)):
-                rew_idx = multi_rew_idx * 8 + len(REWARDS_MULTI_QUAD) * 4 + len(REWARDS)
-                round_rewards[multi_rew_idx + len(REWARDS_MULTI_QUAD) + len(REWARDS)] += get_eight_bits(reward, rew_idx)
+        for rew_idx in range(len(REWARDS)):
+            if is_set(reward, rew_idx):
+                round_rewards[rew_idx] += 1
+
+        for multi_rew_idx in range(len(REWARDS_MULTI_QUAD)):
+            rew_idx = multi_rew_idx * 4 + len(REWARDS)
+            round_rewards[multi_rew_idx + len(REWARDS)] += get_four_bits(reward, rew_idx)
         
-        env.close()
+        for multi_rew_idx in range(len(REWARDS_MULTI_OCTO)):
+            rew_idx = multi_rew_idx * 8 + len(REWARDS_MULTI_QUAD) * 4 + len(REWARDS)
+            round_rewards[multi_rew_idx + len(REWARDS_MULTI_QUAD) + len(REWARDS)] += get_eight_bits(reward, rew_idx)
+    
+    env.close()
 
-    round_rewards /= 3
-    round_ep_len /= 3
     round_rewards[-1] /= round_ep_len # just for DIST_TO_SCOUT
 
     return round_rewards, round_ep_len
@@ -207,29 +206,25 @@ print(",".join(
         ])
     ]
 ))
-for scout_idx in range(len(TEST_SCOUTS)):
-    for guard_idx in range(len(TEST_GUARDS)):
-        # print(f"\nScout {scout_idx}, Guard {guard_idx}")
-
-        print(",".join(
-            [
-                    ",".join([
-                        str(np.mean(rew_sum)),
-                        str(np.var(rew_sum)),
-                        str(np.min(rew_sum)),
-                        str(np.max(rew_sum)),
-                    ])
-                for rew_sum in total_rewards[scout_idx, guard_idx]
-            ]
-            +[
-                ",".join([
-                    str(np.mean(total_ep_len[scout_idx, guard_idx])),
-                    str(np.var(total_ep_len[scout_idx, guard_idx])),
-                    str(np.min(total_ep_len[scout_idx, guard_idx])),
-                    str(np.max(total_ep_len[scout_idx, guard_idx])),
-                ])
-            ]
-        ))
+print(",".join(
+    [
+            ",".join([
+                str(np.mean(total_rewards[:,:,i,:])),
+                str(np.var(total_rewards[:,:,i,:])),
+                str(np.min(total_rewards[:,:,i,:])),
+                str(np.max(total_rewards[:,:,i,:])),
+            ])
+        for i in range(len(REWARDS_COMBINED))
+    ]
+    +[
+        ",".join([
+            str(np.mean(total_ep_len)),
+            str(np.var(total_ep_len)),
+            str(np.min(total_ep_len)),
+            str(np.max(total_ep_len)),
+        ])
+    ]
+))
 
 if args.save:
     save_path = f"logs/test_solo_guard/{'hybrid_' if args.hybrid else ''}{args.guard_name}.npz"
