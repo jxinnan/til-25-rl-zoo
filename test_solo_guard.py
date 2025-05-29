@@ -1,6 +1,7 @@
 import argparse
 from importlib import import_module
 from multiprocessing import Pool
+import os
 
 import numpy as np
 from tqdm import tqdm
@@ -48,6 +49,7 @@ parser.add_argument("guard_name")
 parser.add_argument("-n", "--no_of_matches", type=int, default=200)
 parser.add_argument("--hybrid", action='store_true')
 parser.add_argument("-s", "--save", action='store_true')
+parser.add_argument("--nproc", type=int, default=os.cpu_count())
 args = parser.parse_args()
 
 if args.hybrid:
@@ -178,7 +180,7 @@ for seed_idx in tqdm(range(len(TEST_SEEDS))):
                 seed,
             ])
     
-    with Pool() as p:
+    with Pool(args.nproc) as p:
         mp_out = p.map(run_scout_guard_pair, mp_args)
     
     mp_idx = 0
