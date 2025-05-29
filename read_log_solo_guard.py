@@ -48,21 +48,23 @@ def main():
     ]
     '''
 
-    # print(total_rewards.shape)
-    # print(total_ep_len.shape)
+    print(np.argwhere(total_rewards[:,:,7,:] == 3))
 
-    rewards_list = [0, 7, 8, 10]
-    print(",".join([
-            ",".join([
-                    str(np.mean(total_rewards[scout_idx][:,rew,:]))
-                for rew in rewards_list
-            ]
-            +[
-                str(np.mean(total_ep_len[scout_idx]))
-            ]
-            )
-        for scout_idx in range(total_rewards.shape[0])
-    ]))
+    print(total_rewards.shape)
+    print(total_ep_len.shape)
+
+    # rewards_list = [0, 7, 8, 10]
+    # print(",".join([
+    #         ",".join([
+    #                 str(np.mean(total_rewards[scout_idx][:,rew,:]))
+    #             for rew in rewards_list
+    #         ]
+    #         +[
+    #             str(np.mean(total_ep_len[scout_idx]))
+    #         ]
+    #         )
+    #     for scout_idx in range(total_rewards.shape[0])
+    # ]))
 
     # print(total_noguard_rewards.shape)
     # print(np.argmax(total_noguard_rewards[2]))

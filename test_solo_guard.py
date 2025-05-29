@@ -96,14 +96,14 @@ REWARDS = [
     RewardNames.WALL_COLLISION,
     RewardNames.STATIONARY_PENALTY,
     "custom_THREE_TURNS",
-    RewardNames.AGENT_COLLIDER,
-    RewardNames.AGENT_COLLIDEE,
     RewardNames.GUARD_CAPTURES,
     RewardNames.GUARD_WINS,
+    RewardNames.AGENT_COLLIDER,
 ]
 
 # max 15 per step - 4-bits
 REWARDS_MULTI_QUAD = [
+    RewardNames.AGENT_COLLIDEE,
     "custom_SEE_NEW",
 ]
 
