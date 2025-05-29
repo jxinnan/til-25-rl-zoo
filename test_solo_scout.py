@@ -162,7 +162,7 @@ def main():
 
                 for multi_rew_idx in range(len(GUARD_REWARDS_MULTI)):
                     rew_idx = multi_rew_idx * 4 + len(GUARD_REWARDS)
-                    round_rewards[rew_idx] += get_four_bits(reward, rew_idx)
+                    round_rewards[multi_rew_idx + len(GUARD_REWARDS)] += get_four_bits(reward, rew_idx)
             
             total_guard_rewards[guard_idx, :, seed_idx] = round_rewards
             guard_ep_len[guard_idx, seed_idx] = ep_len
@@ -248,7 +248,13 @@ def main():
     
     if args.save:
         save_path = f"logs/test_solo_scout/{'hybrid_' if args.hybrid else ''}{args.scout_name}.npz"
-        np.savez(save_path, total_guard_rewards=total_guard_rewards, total_noguard_rewards=total_noguard_rewards)
+        np.savez(
+            save_path,
+            total_guard_rewards=total_guard_rewards,
+            total_noguard_rewards=total_noguard_rewards,
+            noguard_ep_len=noguard_ep_len,
+            guard_ep_len=guard_ep_len,
+        )
 
 if __name__ == "__main__":
     main()
