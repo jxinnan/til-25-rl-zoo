@@ -193,6 +193,7 @@ for seed_idx in tqdm(range(len(TEST_SEEDS))):
             total_rewards[scout_idx, guard_idx, :, seed_idx] = round_rewards
             total_ep_len[scout_idx, guard_idx, seed_idx] = round_ep_len
 
+print("Aggregated")
 print(",".join(
     [
             ",".join([
@@ -227,6 +228,19 @@ print(",".join(
         ])
     ]
 ))
+print("\nSummary")
+rewards_list = [0, 7, 8, 10]
+print(",".join([
+        ",".join([
+                str(np.mean(total_rewards[scout_idx][:,rew,:]))
+            for rew in rewards_list
+        ]
+        +[
+            str(np.mean(total_ep_len[scout_idx]))
+        ]
+        )
+    for scout_idx in range(total_rewards.shape[0])
+]))
 
 if args.save:
     save_path = f"logs/test_solo_guard/{'hybrid_' if args.hybrid else ''}{args.guard_name}.npz"
