@@ -27,8 +27,12 @@ def main():
     ]
     '''
 
+    # print(total_noguard_rewards.shape)
     # print(np.argmax(total_noguard_rewards[2]))
-    print(np.argwhere(total_noguard_rewards[2] > 5))
+    target_metric = total_noguard_rewards[0]
+    comparison = target_metric < 24
+    for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
+        print(tup[0], tup[1])
 
 if __name__ == "__main__":
     main()
