@@ -12,6 +12,8 @@ def main():
     log_obj = np.load(save_path)
     total_guard_rewards = log_obj['total_guard_rewards']
     total_noguard_rewards = log_obj['total_noguard_rewards']
+    noguard_ep_len = log_obj['noguard_ep_len']
+    guard_ep_len = log_obj['guard_ep_len']
 
     '''
     NOGUARD_REWARDS = [
@@ -29,8 +31,8 @@ def main():
 
     # print(total_noguard_rewards.shape)
     # print(np.argmax(total_noguard_rewards[2]))
-    target_metric = total_noguard_rewards[0]
-    comparison = target_metric < 24
+    target_metric = noguard_ep_len
+    comparison = target_metric < 100
     for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
         print(tup[0], tup[1])
 
