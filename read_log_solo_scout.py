@@ -12,8 +12,11 @@ def main():
     log_obj = np.load(save_path)
     total_guard_rewards = log_obj['total_guard_rewards']
     total_noguard_rewards = log_obj['total_noguard_rewards']
-    noguard_ep_len = log_obj['noguard_ep_len']
-    guard_ep_len = log_obj['guard_ep_len']
+    try:
+        noguard_ep_len = log_obj['noguard_ep_len']
+        guard_ep_len = log_obj['guard_ep_len']
+    except:
+        print("No episode length data")
 
     '''
     NOGUARD_REWARDS = [
@@ -34,18 +37,18 @@ def main():
     target_metric = total_noguard_rewards[0]
     comparison = target_metric < 40
     interesting_seeds = []
-    print(
-        np.min(total_noguard_rewards[0][np.argwhere(noguard_ep_len == 100)])
-    )
+    # print(
+    #     np.min(total_noguard_rewards[0][np.argwhere(noguard_ep_len == 100)])
+    # )
     # print()
     # print(np.argwhere(total_noguard_rewards[0] < 15))
-    # for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
-    #     interesting_seeds.append((tup[0], tup[1], tup[1]+total_noguard_rewards[1][tup[0]]))
+    for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
+        interesting_seeds.append((tup[0], tup[1], tup[1]+total_noguard_rewards[1][tup[0]]))
         # print(tup[0], tup[1])
     
-    # for seed in sorted(interesting_seeds, key = lambda x : x[2]):
-    #     if seed[2] < 40:
-    #         print(seed)
+    for seed in sorted(interesting_seeds, key = lambda x : x[2]):
+        if seed[2] < 40:
+            print(seed)
 
 if __name__ == "__main__":
     main()
