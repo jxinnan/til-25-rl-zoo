@@ -30,7 +30,7 @@ class RLManager:
         # This is where you can initialize your model and any static
         # configurations.
         agent_name = os.path.split(os.path.dirname(os.path.abspath(__file__)))[-1]
-        self.model = DQN.load(f"scouts/{agent_name}/{agent_name}")
+        self.model = DQN.load(f"guards/{agent_name}/{agent_name}")
         self.size = 16
 
         # observation space
