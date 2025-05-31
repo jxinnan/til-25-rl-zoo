@@ -31,10 +31,21 @@ def main():
 
     # print(total_noguard_rewards.shape)
     # print(np.argmax(total_noguard_rewards[2]))
-    target_metric = noguard_ep_len
-    comparison = target_metric < 100
-    for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
-        print(tup[0], tup[1])
+    target_metric = total_noguard_rewards[0]
+    comparison = target_metric < 40
+    interesting_seeds = []
+    print(
+        np.min(total_noguard_rewards[0][np.argwhere(noguard_ep_len == 100)])
+    )
+    # print()
+    # print(np.argwhere(total_noguard_rewards[0] < 15))
+    # for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
+    #     interesting_seeds.append((tup[0], tup[1], tup[1]+total_noguard_rewards[1][tup[0]]))
+        # print(tup[0], tup[1])
+    
+    # for seed in sorted(interesting_seeds, key = lambda x : x[2]):
+    #     if seed[2] < 40:
+    #         print(seed)
 
 if __name__ == "__main__":
     main()
