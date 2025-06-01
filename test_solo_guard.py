@@ -4,7 +4,6 @@ from multiprocessing import Pool
 import os
 
 import numpy as np
-from tqdm import tqdm
 
 from til_environment import gridworld
 from til_environment.types import RewardNames
@@ -50,7 +49,13 @@ parser.add_argument("-n", "--no_of_matches", type=int, default=200)
 parser.add_argument("--hybrid", action='store_true')
 parser.add_argument("-s", "--save", action='store_true')
 parser.add_argument("--nproc", type=int, default=os.cpu_count())
+parser.add_argument("--ipynb", action='store_true')
 args = parser.parse_args()
+
+if args.ipynb:
+    from tqdm.notebook import tqdm
+else:
+    from tqdm import tqdm
 
 if args.hybrid:
     RLManager = getattr(import_module(f"hybrid.{args.guard_name}.rl_manager"), "RLManager")
