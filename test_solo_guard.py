@@ -97,7 +97,7 @@ TEST_GUARDS = [
 # max 1 per step - 1-bit
 REWARDS = [
     "custom_SEE_SCOUT",
-    "custom_SCOUT_ONE_TILE",        
+    "custom_SCOUT_ONE_TILE",
     RewardNames.WALL_COLLISION,
     RewardNames.STATIONARY_PENALTY,
     "custom_THREE_TURNS",
@@ -234,7 +234,7 @@ print(",".join(
     ]
 ))
 print("\nSummary")
-rewards_list = [0, 7, 8, 10]
+rewards_list = [0, 5, 6, 10]
 print(",".join([
         ",".join([
                 str(np.mean(total_rewards[scout_idx][:,rew,:]))
