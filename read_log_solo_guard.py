@@ -35,12 +35,12 @@ def main():
         2 RewardNames.WALL_COLLISION,
         3 RewardNames.STATIONARY_PENALTY,
         4 "custom_THREE_TURNS",
-        5 RewardNames.AGENT_COLLIDER,
-        6 RewardNames.AGENT_COLLIDEE,
-        7 RewardNames.GUARD_CAPTURES,
-        8 RewardNames.GUARD_WINS,
+        5 RewardNames.GUARD_CAPTURES,
+        6 RewardNames.GUARD_WINS,
+        7 RewardNames.AGENT_COLLIDER,
     ]
     REWARDS_MULTI_QUAD = [
+        8 RewardNames.AGENT_COLLIDEE,
         9 "custom_SEE_NEW",
     ]
     REWARDS_MULTI_OCTO = [
@@ -48,23 +48,23 @@ def main():
     ]
     '''
 
-    print(np.argwhere(total_rewards[:,:,7,:] == 3))
+    # print(np.argwhere(total_rewards[:,:,7,:] == 3))
 
-    print(total_rewards.shape)
-    print(total_ep_len.shape)
+    # print(total_rewards.shape)
+    # print(total_ep_len.shape)
 
-    # rewards_list = [0, 7, 8, 10]
-    # print(",".join([
-    #         ",".join([
-    #                 str(np.mean(total_rewards[scout_idx][:,rew,:]))
-    #             for rew in rewards_list
-    #         ]
-    #         +[
-    #             str(np.mean(total_ep_len[scout_idx]))
-    #         ]
-    #         )
-    #     for scout_idx in range(total_rewards.shape[0])
-    # ]))
+    rewards_list = [0, 5, 6, 10]
+    print(",".join([
+            ",".join([
+                    str(np.mean(total_rewards[scout_idx][:,rew,:]))
+                for rew in rewards_list
+            ]
+            +[
+                str(np.mean(total_ep_len[scout_idx]))
+            ]
+            )
+        for scout_idx in range(total_rewards.shape[0])
+    ]))
 
     # print(total_noguard_rewards.shape)
     # print(np.argmax(total_noguard_rewards[2]))
