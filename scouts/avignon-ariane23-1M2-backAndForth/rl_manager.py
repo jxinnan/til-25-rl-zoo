@@ -80,7 +80,9 @@ class RLManager:
             # entering ane exiting a tile the same way incurs double penalty
             self.obs_repeat_space[*self.last_pos] += np.minimum(0.1, 1 - self.obs_repeat_space[*self.last_pos])
 
-        self.last_last_pos = self.last_pos.copy()
+        if type(self.last_pos) != type(None):
+            self.last_last_pos = self.last_pos.copy()
+
         self.last_pos = curr_location.copy()
 
         # rotate clockwise so absolute north faces up
