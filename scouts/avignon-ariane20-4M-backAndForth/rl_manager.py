@@ -81,9 +81,11 @@ class RLManager:
             self.obs_repeat_space[*self.last_pos] += np.minimum(0.1, 1 - self.obs_repeat_space[*self.last_pos])
 
         if type(self.last_pos) != type(None):
-            self.last_last_pos = self.last_pos.copy()
-
-        self.last_pos = curr_location.copy()
+            if not np.array_equal(self.last_pos, curr_location):
+                self.last_last_pos = self.last_pos.copy()
+                self.last_pos = curr_location.copy()
+        else:
+            self.last_pos = curr_location.copy()
 
         # rotate clockwise so absolute north faces up
         new_gridview = np.rot90(new_gridview, k=curr_direction)
@@ -206,8 +208,8 @@ class RLManager:
                 output_obs[output_obs_idx] = self.GUARD_DISCRETE_LEVELS[new_guard_space[ori_x, ori_y]]
                 output_obs_idx += 1
         
-        # last 2 actions were turning
-        if self.consecutive_turns >= 2:
+        # last action was turning
+        if self.consecutive_turns >= 1:
             output_obs[output_obs_idx] = 1
         output_obs_idx += 1
 
@@ -225,7 +227,14 @@ class RLManager:
         processed_obs = output_obs
 
         # Your inference code goes here.
-        action, _states = self.model.predict(processed_obs, deterministic=True)
+        # action, _states = self.model.predict(processed_obs, deterministic=True)
+        action_order, _states = self.model.predict(processed_obs, deterministic=True)
+
+        action_idx = 0
+        action = action_order[action_idx]
+        while action in (Action.LEFT, Action.RIGHT) and self.obs_wall_left_space[*curr_location] > 0 and self.obs_wall_right_space[*curr_location] > 0:
+            action_idx += 1
+            action = action_order[action_idx]
 
         if action in (Action.LEFT, Action.RIGHT,):
             self.consecutive_turns += 1
