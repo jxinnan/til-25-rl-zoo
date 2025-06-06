@@ -28,7 +28,7 @@ class RLManager:
     def __init__(self):
         # This is where you can initialize your model and any static
         # configurations.
-        self.model = QRDQN.load("scouts/chitose_2M/chitose_noGuards_2000000_steps")
+        self.model = QRDQN.load("scouts/chitose-2M/chitose_noGuards_2000000_steps")
         self.size = 16
 
         # observation space
