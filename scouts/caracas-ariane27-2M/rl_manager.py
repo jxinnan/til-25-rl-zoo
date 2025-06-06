@@ -28,7 +28,7 @@ class RLManager:
     def __init__(self):
         # This is where you can initialize your model and any static
         # configurations.
-        self.model = DQN.load("scouts/caracas-guard-4M/caracas-guard_guard_4000000_steps")
+        self.model = DQN.load("scouts/caracas-ariane27-2M/caracas-ariane27_noGuards_2000000_steps")
         self.size = 16
 
         # observation space
@@ -53,6 +53,9 @@ class RLManager:
         
         self.consecutive_turns = 0
 
+        self.last_pos = None
+        self.last_last_pos = None
+
     def rl(self, observation: dict[str, int | list[int]]) -> int:
         """Gets the next action for the agent, based on the observation.
 
@@ -71,8 +74,20 @@ class RLManager:
         curr_direction = np.array(observation["direction"], dtype=np.int64) # right down left up
         curr_location = np.array(observation["location"], dtype=np.int64)
 
-        self.obs_repeat_space[*curr_location] += np.minimum(0.1, 1 - self.obs_repeat_space[*curr_location])
+        if not np.array_equal(self.last_pos, curr_location):
+            self.obs_repeat_space[*curr_location] += np.minimum(0.1, 1 - self.obs_repeat_space[*curr_location])
 
+        if np.array_equal(self.last_last_pos, curr_location) and not np.array_equal(self.last_pos, curr_location):
+            # entering ane exiting a tile the same way incurs double penalty
+            self.obs_repeat_space[*self.last_pos] += np.minimum(0.1, 1 - self.obs_repeat_space[*self.last_pos])
+
+        if type(self.last_pos) != type(None):
+            if not np.array_equal(self.last_pos, curr_location):
+                self.last_last_pos = self.last_pos.copy()
+                self.last_pos = curr_location.copy()
+        else:
+            self.last_pos = curr_location.copy()
+        
         # rotate clockwise so absolute north faces up
         new_gridview = np.rot90(new_gridview, k=curr_direction)
 
@@ -195,7 +210,7 @@ class RLManager:
                 output_obs_idx += 1
         
         # last 2 actions were turning
-        if self.consecutive_turns >= 2:
+        if self.consecutive_turns >= 1:
             output_obs[output_obs_idx] = 1
         output_obs_idx += 1
 
