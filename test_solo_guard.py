@@ -5,9 +5,8 @@ import os
 
 import numpy as np
 
-from til_environment import gridworld
 from til_environment.types import RewardNames
-from til_environment.wrappers import GuardEvalWrapper
+from spectate_solo_guard import give_env
 
 def is_set(x, n):
     """
@@ -26,22 +25,6 @@ def get_eight_bits(x, n):
     Returns 8 bits, starting from the specified bit (indexed from the smallest power) as the smallest.
     """
     return (x & (0b11111111 << n)) >> n
-
-def give_env(custom_rewards_dict = None, custom_render_mode = None, guard_classes = None, scout_class = None, main_guard = (-1,-1), side_guard = (-1,-1)):
-    return GuardEvalWrapper(
-        gridworld.env(
-            env_wrappers = [],
-            render_mode = custom_render_mode,
-            debug = True,
-            novice = False,
-            rewards_dict = custom_rewards_dict,
-        ), 
-        running_scout = False, 
-        guard_classes = guard_classes,
-        scout_class = scout_class,
-        chosen_astar = main_guard,
-        side_astar = side_guard,
-    )
 
 parser = argparse.ArgumentParser()
 parser.add_argument("guard_name")
