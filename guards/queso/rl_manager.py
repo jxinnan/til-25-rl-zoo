@@ -1,6 +1,8 @@
 """Manages the RL model."""
 from enum import IntEnum
 from random import randint
+import warnings
+warnings.filterwarnings("error")
 
 import numpy as np
 
@@ -73,6 +75,11 @@ class RLManager:
         self.repeated_prob[turn_idx, x_idx, y_idx] = 1 - curr_prob
 
     def calc_next(self, turn_idx, x_idx, y_idx):
+        apparent_wall_top_space = np.logical_or(self.obs_wall_top_space, self.faux_wall_top_space[turn_idx])
+        apparent_wall_left_space = np.logical_or(self.obs_wall_left_space, self.faux_wall_left_space[turn_idx])
+        apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[turn_idx])
+        apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[turn_idx])
+
         prev_turn_idx = turn_idx - 1
         if x_idx < 16: # vertical
             turn_x_idx = x_idx + 16
@@ -86,10 +93,10 @@ class RLManager:
             aft_turn_y_idx_1 = y_idx
             aft_turn_x_idx_2 = x_idx + 1
             aft_turn_y_idx_2 = y_idx
-            can_neg = False if self.obs_wall_top_space[x_idx, y_idx] == 255 else True
-            can_pos = False if self.obs_wall_bottom_space[x_idx, y_idx] == 255 else True
-            can_turn_1 = False if self.obs_wall_left_space[x_idx, y_idx] == 255 else True
-            can_turn_2 = False if self.obs_wall_right_space[x_idx, y_idx] == 255 else True
+            can_neg = False if apparent_wall_top_space[x_idx, y_idx] else True
+            can_pos = False if apparent_wall_bottom_space[x_idx, y_idx] else True
+            can_turn_1 = False if apparent_wall_left_space[x_idx, y_idx] else True
+            can_turn_2 = False if apparent_wall_right_space[x_idx, y_idx] else True
             can_turn = (can_turn_1 or can_turn_2)
         else: # horizontal
             turn_x_idx = x_idx - 16
@@ -103,10 +110,10 @@ class RLManager:
             aft_turn_y_idx_1 = y_idx - 1
             aft_turn_x_idx_2 = turn_x_idx
             aft_turn_y_idx_2 = y_idx + 1
-            can_neg = False if self.obs_wall_left_space[turn_x_idx, y_idx] == 255 else True
-            can_pos = False if self.obs_wall_right_space[turn_x_idx, y_idx] == 255 else True
-            can_turn_1 = False if self.obs_wall_top_space[turn_x_idx, y_idx] == 255 else True
-            can_turn_2 = False if self.obs_wall_bottom_space[turn_x_idx, y_idx] == 255 else True
+            can_neg = False if apparent_wall_left_space[turn_x_idx, y_idx] else True
+            can_pos = False if apparent_wall_right_space[turn_x_idx, y_idx] else True
+            can_turn_1 = False if apparent_wall_top_space[turn_x_idx, y_idx] else True
+            can_turn_2 = False if apparent_wall_bottom_space[turn_x_idx, y_idx] else True
             can_turn = (can_turn_1 or can_turn_2)
         
         # check if any possible moves exist, and if on first turn
@@ -228,6 +235,14 @@ class RLManager:
                     if new_abs_x - 1 >= 0: # right wall of the tile to the left
                         self.obs_wall_right_space[new_abs_x-1, new_abs_y] = np.uint8(wall_bits[1] * 255)
 
+                    # box up tiles never ever stepped on, except for spawn tile
+                    if tile_contents != Tile.EMPTY and new_abs_x != 0 and new_abs_y != 0:
+                        walls_changed = True
+                        self.faux_wall_top_space[:self.curr_turn, new_abs_x, new_abs_y] = np.uint8(255)
+                        self.faux_wall_left_space[:self.curr_turn, new_abs_x, new_abs_y] = np.uint8(255)
+                        self.faux_wall_bottom_space[:self.curr_turn, new_abs_x, new_abs_y] = np.uint8(255)
+                        self.faux_wall_right_space[:self.curr_turn, new_abs_x, new_abs_y] = np.uint8(255)
+                
                 # update visible guards
                 tile_scout_info = unpacked[5]
                 if tile_scout_info == 1:
@@ -321,15 +336,27 @@ class RLManager:
             scout_loc = (0,0)
         
         if scout_loc == (-1,-1):
-            for x in range(2 * self.size):
-                for y in range(self.size):
-                    self.calc_next(self.curr_turn, x, y)
+            if walls_changed:
+                for turn in range(max(self.curr_turn-1,1), self.curr_turn+1):
+                    self.scout_prob[turn] = 0
+                    for x in range(2 * self.size):
+                        for y in range(self.size):
+                            self.calc_next(turn, x, y)
+                        
+                    for x in range(self.size):
+                        for y in range(self.size):
+                            self.calc_next_repeated(turn, x, y)
+            else:
+                for x in range(2 * self.size):
+                    for y in range(self.size):
+                        self.calc_next(self.curr_turn, x, y)
+                        
+                for x in range(self.size):
+                    for y in range(self.size):
+                        self.calc_next_repeated(self.curr_turn, x, y)
         else:
             self.seen_scout(scout_loc)
 
-        for x in range(self.size):
-            for y in range(self.size):
-                self.calc_next_repeated(self.curr_turn, x, y)
 
         self.visualise()
 
