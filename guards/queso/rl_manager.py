@@ -60,15 +60,17 @@ class RLManager:
         self.last_seen_turn = 0
 
     def calc_next_repeated(self, turn_idx, x_idx, y_idx):
-        self.repeated_prob[turn_idx, x_idx, y_idx] = \
-            np.sum(self.scout_prob[turn_idx, x_idx, y_idx]) + \
-            np.sum(self.scout_prob[turn_idx, x_idx+16, y_idx])
-
         prev_turn_idx = turn_idx - 1
         if prev_turn_idx < 0:
-            return
+            prev_prob = 1
+        else:
+            prev_prob = 1 - self.repeated_prob[prev_turn_idx, x_idx, y_idx]
+
+        curr_prob = prev_prob * (1 - \
+            np.sum(self.scout_prob[turn_idx, x_idx, y_idx]) - \
+            np.sum(self.scout_prob[turn_idx, x_idx+16, y_idx]))
         
-        self.repeated_prob[turn_idx, x_idx, y_idx] += self.repeated_prob[prev_turn_idx, x_idx, y_idx]
+        self.repeated_prob[turn_idx, x_idx, y_idx] = 1 - curr_prob
 
     def calc_next(self, turn_idx, x_idx, y_idx):
         prev_turn_idx = turn_idx - 1
