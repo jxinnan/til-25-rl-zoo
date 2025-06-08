@@ -1,13 +1,13 @@
 """Manages the RL model."""
 from enum import IntEnum
 from random import randint
-from time import sleep
+# from time import sleep
 
 import numpy as np
 
 from . import gridworld_astar as astar
 
-import cv2
+# import cv2
 
 class Action(IntEnum):
     FORWARD = 0
@@ -733,7 +733,7 @@ class RLManager:
         
         return action
 
-    def visualise(self, turn_idx):
+    # def visualise(self, turn_idx):
         # if self.curr_turn == 0:
         #     out_img = np.full((640,640), 0, dtype=np.float32)
         #     out_img = cv2.resize(out_img, (640,640), interpolation=cv2.INTER_NEAREST)
@@ -744,23 +744,23 @@ class RLManager:
             # sleep(5)
 
         # out_img = self.repeated_prob[self.curr_turn]
-        out_img = np.sum(self.scout_prob[turn_idx, :16], axis=2) + np.sum(self.scout_prob[turn_idx, 16:], axis=2)
-        total_sum = np.sum(out_img)
-        print(np.sum(out_img))
-        out_img = np.transpose(out_img)
+        # out_img = np.sum(self.scout_prob[turn_idx, :16], axis=2) + np.sum(self.scout_prob[turn_idx, 16:], axis=2)
+        # total_sum = np.sum(out_img)
+        # print(np.sum(out_img))
+        # out_img = np.transpose(out_img)
         # if np.max(out_img) > 0:
         #     print(self.faux_wall_top_space[self.curr_turn, *self.scout_loc])
         #     print(self.faux_wall_left_space[self.curr_turn, *self.scout_loc])
         #     print(self.faux_wall_bottom_space[self.curr_turn, *self.scout_loc])
         #     print(self.faux_wall_right_space[self.curr_turn, *self.scout_loc])
         # else:
-        out_img *= 1/np.max(out_img)
-        out_img = cv2.resize(out_img, (640,640), interpolation=cv2.INTER_NEAREST)
-        cv2.imshow("Scout Probability", out_img)
-        if total_sum < 0.9:
-            print(self.curr_turn)
-            cv2.waitKey(0)
-        else:
+        # out_img *= 1/np.max(out_img)
+        # out_img = cv2.resize(out_img, (640,640), interpolation=cv2.INTER_NEAREST)
+        # cv2.imshow("Scout Probability", out_img)
+        # if total_sum < 0.9:
+        #     print(self.curr_turn)
+        #     cv2.waitKey(0)
+        # else:
             # print()
             # print(self.curr_turn, turn_idx)
             # print(self.scout_prob[self.curr_turn-1, *self.scout_loc])
@@ -769,7 +769,7 @@ class RLManager:
             # print(self.faux_wall_left_space[self.curr_turn-1, *self.scout_loc])
             # print(self.faux_wall_bottom_space[self.curr_turn-1, *self.scout_loc])
             # print(self.faux_wall_right_space[self.curr_turn-1, *self.scout_loc])
-            cv2.waitKey(10)
+            # cv2.waitKey(10)
 
     def rl(self, observation: dict[str, int | list[int]]) -> int:
         """Gets the next action for the agent, based on the observation.
@@ -804,7 +804,7 @@ class RLManager:
             # self.visualise(self.curr_turn)
             dst_loc = scout_loc
 
-        self.visualise(self.curr_turn)
+        # self.visualise(self.curr_turn)
 
         self.action = self.astar_next_action(observation, dst_loc, curr_guard_locs)
 
