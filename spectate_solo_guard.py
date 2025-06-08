@@ -49,9 +49,10 @@ def main():
         {"main_guard": (0.375,1), "side_guard": (0.375,1)},
         {"main_guard": (1,1), "side_guard": (1,1)},
     ]
-    TEST_SCOUT = getattr(import_module(f"hybrid.stationary.rl_manager"), "RLManager")
+    # TEST_SCOUT = getattr(import_module(f"hybrid.stationary.rl_manager"), "RLManager")
+    TEST_SCOUT = getattr(import_module(f"scouts.chitose-guard-6M.rl_manager"), "RLManager")
     env_kwargs = TEST_GUARDS[args.guard]
-    env = give_env(custom_render_mode=None, scout_class=TEST_SCOUT, **env_kwargs)
+    env = give_env(custom_render_mode="human", scout_class=TEST_SCOUT, **env_kwargs)
     env.reset(seed=args.seed)
     if args.sleep:
         sleep(2)
