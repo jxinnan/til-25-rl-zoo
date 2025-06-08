@@ -434,7 +434,7 @@ class RLManager:
                         self.last_seen_rewards[new_abs_x, new_abs_y] = self.curr_turn
                 
                 tile_guard_info = unpacked[4]
-                if tile_guard_info == 1 and 0 < abs(i - rel_curr_location[0]) <= 2 and 0 < abs(j - rel_curr_location[1]) <= 2:
+                if tile_guard_info == 1 and abs(i - rel_curr_location[0]) <= 2 and abs(j - rel_curr_location[1]) <= 2 and not np.array_equal(np.array((new_abs_x, new_abs_y), dtype=np.uint8), curr_location):
                     curr_guard_locs.append((new_abs_x, new_abs_y))
                 
                 # update visible scout
