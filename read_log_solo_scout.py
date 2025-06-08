@@ -72,12 +72,12 @@ def main():
     # comparison = target_metric == 1
     # interesting_seeds = []
     # for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
-    #     interesting_seeds.append((tup[0], guard_ep_len[0][tup[0]]))
+    #     interesting_seeds.append((tup[0], guard_ep_len[0][tup[0]], total_guard_rewards[0][0][tup[0]]+total_guard_rewards[0][1][tup[0]]))
     #     # interesting_seeds.append(tup[0])
     #     # print(tup[0], tup[1])
     
-    # for seed in sorted(interesting_seeds, key = lambda x : x[1], reverse=True):
-    #     if seed[1] > 10:
+    # for seed in sorted(interesting_seeds, key = lambda x : x[2], reverse=False):
+    #     if seed[2] > 20:
     #         print(seed)
 
 if __name__ == "__main__":

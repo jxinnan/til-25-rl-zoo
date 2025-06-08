@@ -53,25 +53,30 @@ def main():
     # print(total_rewards.shape)
     # print(total_ep_len.shape)
 
-    rewards_list = [0, 5, 6, 10]
-    print(",".join([
-            ",".join([
-                    str(np.mean(total_rewards[scout_idx][:,rew,:]))
-                for rew in rewards_list
-            ]
-            +[
-                str(np.mean(total_ep_len[scout_idx]))
-            ]
-            )
-        for scout_idx in range(total_rewards.shape[0])
-    ]))
+    # rewards_list = [0, 5, 6, 10]
+    # print(",".join([
+    #         ",".join([
+    #                 str(np.mean(total_rewards[scout_idx][:,rew,:]))
+    #             for rew in rewards_list
+    #         ]
+    #         +[
+    #             str(np.mean(total_ep_len[scout_idx]))
+    #         ]
+    #         )
+    #     for scout_idx in range(total_rewards.shape[0])
+    # ]))
 
     # print(total_noguard_rewards.shape)
     # print(np.argmax(total_noguard_rewards[2]))
-    # target_metric = total_noguard_rewards[0]
-    # comparison = target_metric < 24
-    # for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
-    #     print(tup[0], tup[1])
+    target_metric = total_rewards[1,1,0]
+    comparison = target_metric < 20
+    seeds = []
+    for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
+        seeds.append((tup[0], tup[1], total_ep_len[1,1,tup[0]]))
+    
+    for seed in sorted(seeds, key = lambda x : x[1], reverse=True):
+        if seed[2] == 100:
+            print(seed)
 
 if __name__ == "__main__":
     main()

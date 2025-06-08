@@ -27,6 +27,7 @@ def main():
     parser.add_argument("--hybrid", action='store_true')
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("-z", "--sleep", action='store_true')
+    parser.add_argument("-s", "--scout", type=int, default=0)
     parser.add_argument("-g", "--guard", type=int, default=0)
     args = parser.parse_args()
 
@@ -35,24 +36,38 @@ def main():
     else:
         RLManager = getattr(import_module(f"guards.{args.guard_name}.rl_manager"), "RLManager")
     model = RLManager()
+    
+    # scout
+    stationary_scout = getattr(import_module(f"hybrid.stationary.rl_manager"), "RLManager")
+    wonder = getattr(import_module(f"scouts.wonder.rl_manager"), "RLManager")
+    avignon = getattr(import_module(f"scouts.avignon-prep-8M.rl_manager"), "RLManager")
+    atlanta = getattr(import_module(f"scouts.atlanta-8M-guard-twowalls-8M.rl_manager"), "RLManager")
 
-    # env = gridworld.env(
-    #     env_wrappers = [],
-    #     render_mode = "human",
-    #     debug = True,
-    #     novice = False,
-    #     rewards_dict = None,
-    # )
+    # hybrid
+    mcts = getattr(import_module(f"hybrid.mcts_depth7.rl_manager"), "RLManager")
+    cnnppo = getattr(import_module(f"hybrid.cnnppo_split_v1.rl_manager"), "RLManager")
+
+    # guard
+    helvetica = getattr(import_module(f"guards.helvetica.rl_manager"), "RLManager")
+
+    TEST_SCOUTS = [
+        # {"scout_class": stationary_scout},
+        {"scout_class": wonder},
+        {"scout_class": avignon},
+        {"scout_class": mcts},
+        {"scout_class": cnnppo},
+        {"scout_class": atlanta},
+    ]
+
     TEST_GUARDS = [
         {"main_guard": (-1,-1), "side_guard": (-1,-1)},
-        {"main_guard": (1,1), "side_guard": (-1,-1)},
         {"main_guard": (0.375,1), "side_guard": (0.375,1)},
-        {"main_guard": (1,1), "side_guard": (1,1)},
+        {"guard_classes":[helvetica, mcts]},
+        {"guard_classes":[mcts, cnnppo]},
     ]
-    # TEST_SCOUT = getattr(import_module(f"hybrid.stationary.rl_manager"), "RLManager")
-    TEST_SCOUT = getattr(import_module(f"scouts.chitose-guard-6M.rl_manager"), "RLManager")
-    env_kwargs = TEST_GUARDS[args.guard]
-    env = give_env(custom_render_mode="human", scout_class=TEST_SCOUT, **env_kwargs)
+    scout_kwargs = TEST_SCOUTS[args.scout]
+    guard_kwargs = TEST_GUARDS[args.guard]
+    env = give_env(custom_render_mode="human", **scout_kwargs, **guard_kwargs)
     env.reset(seed=args.seed)
     if args.sleep:
         sleep(2)
