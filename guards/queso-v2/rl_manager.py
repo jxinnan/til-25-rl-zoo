@@ -151,10 +151,17 @@ class RLManager:
         apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[turn_idx])
         apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[turn_idx])
 
-        next_apparent_wall_top_space = np.logical_or(self.obs_wall_top_space, self.faux_wall_top_space[turn_idx+1])
-        next_apparent_wall_left_space = np.logical_or(self.obs_wall_left_space, self.faux_wall_left_space[turn_idx+1])
-        next_apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[turn_idx+1])
-        next_apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[turn_idx+1])
+        next_turn_idx = min(100, turn_idx+1)
+        next_apparent_wall_top_space = np.logical_or(self.obs_wall_top_space, self.faux_wall_top_space[next_turn_idx])
+        next_apparent_wall_left_space = np.logical_or(self.obs_wall_left_space, self.faux_wall_left_space[next_turn_idx])
+        next_apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[next_turn_idx])
+        next_apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[next_turn_idx])
+
+        next_next_turn_idx = min(100, turn_idx+2)
+        next_next_apparent_wall_top_space = np.logical_or(self.obs_wall_top_space, self.faux_wall_top_space[next_next_turn_idx])
+        next_next_apparent_wall_left_space = np.logical_or(self.obs_wall_left_space, self.faux_wall_left_space[next_next_turn_idx])
+        next_next_apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[next_next_turn_idx])
+        next_next_apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[next_next_turn_idx])
 
         prev_turn_idx = turn_idx - 1
         if x_idx < 16: # vertical
@@ -169,8 +176,14 @@ class RLManager:
             aft_turn_y_idx_1 = y_idx
             aft_turn_x_idx_2 = x_idx + 1
             aft_turn_y_idx_2 = y_idx
-            can_neg = False if next_apparent_wall_top_space[x_idx, y_idx] else True
-            can_pos = False if next_apparent_wall_bottom_space[x_idx, y_idx] else True
+            can_neg = False if apparent_wall_top_space[x_idx, y_idx] \
+                    or (next_apparent_wall_top_space[neg_x_idx, neg_y_idx] and next_apparent_wall_bottom_space[neg_x_idx, neg_y_idx]
+                        and next_next_apparent_wall_left_space[neg_x_idx, neg_y_idx] and next_next_apparent_wall_right_space[neg_x_idx, neg_y_idx]) \
+                else True
+            can_pos = False if apparent_wall_bottom_space[x_idx, y_idx] \
+                    or (next_apparent_wall_top_space[pos_x_idx, pos_y_idx] and next_apparent_wall_bottom_space[pos_x_idx, pos_y_idx]
+                        and next_next_apparent_wall_left_space[pos_x_idx, pos_y_idx] and next_next_apparent_wall_right_space[pos_x_idx, pos_y_idx]) \
+                else True
             can_turn_1 = False if next_apparent_wall_left_space[x_idx, y_idx] else True
             can_turn_2 = False if next_apparent_wall_right_space[x_idx, y_idx] else True
             can_turn = (can_turn_1 or can_turn_2)
@@ -186,8 +199,14 @@ class RLManager:
             aft_turn_y_idx_1 = y_idx - 1
             aft_turn_x_idx_2 = turn_x_idx
             aft_turn_y_idx_2 = y_idx + 1
-            can_neg = False if next_apparent_wall_left_space[turn_x_idx, y_idx] else True
-            can_pos = False if next_apparent_wall_right_space[turn_x_idx, y_idx] else True
+            can_neg = False if apparent_wall_left_space[turn_x_idx, y_idx] \
+                    or (next_apparent_wall_left_space[true_neg_x_idx, y_idx] and next_apparent_wall_right_space[true_neg_x_idx, y_idx]
+                        and next_next_apparent_wall_top_space[true_neg_x_idx, y_idx] and next_next_apparent_wall_bottom_space[true_neg_x_idx, y_idx]) \
+                else True
+            can_pos = False if apparent_wall_right_space[turn_x_idx, y_idx] \
+                    or (next_apparent_wall_left_space[true_pos_x_idx, y_idx] and next_apparent_wall_right_space[true_pos_x_idx, y_idx]
+                        and next_next_apparent_wall_top_space[true_pos_x_idx, y_idx] and next_next_apparent_wall_bottom_space[true_pos_x_idx, y_idx]) \
+                else True
             can_turn_1 = False if next_apparent_wall_top_space[turn_x_idx, y_idx] else True
             can_turn_2 = False if next_apparent_wall_bottom_space[turn_x_idx, y_idx] else True
             can_turn = (can_turn_1 or can_turn_2)
@@ -374,6 +393,39 @@ class RLManager:
                 if new_abs_y < 0 or new_abs_y >= self.size: continue
                 heard_curr[heard_curr_idx] = np.array((new_abs_x, new_abs_y), dtype=np.uint8)
                 heard_curr_idx += 1
+        
+        # unlock newly unheard tiles
+        heard_prev_idx = 0
+        while heard_prev_idx < 35 and self.heard_prev[heard_prev_idx][0] < 255:
+            if not any(np.equal(heard_curr,self.heard_prev[heard_prev_idx]).all(1)):
+                walls_changed_turn = min(walls_changed_turn, self.curr_turn-3)
+
+                new_abs_x = int(self.heard_prev[heard_prev_idx][0])
+                new_abs_y = int(self.heard_prev[heard_prev_idx][1])
+                
+                self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
+                self.faux_wall_left_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
+                self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
+                self.faux_wall_right_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
+                
+                # we know the wall on the other side too
+                if new_abs_y + 1 < self.size: # top wall of the tile below
+                    self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y+1] = np.uint8(0)
+                if new_abs_x + 1 < self.size: # left wall of the tile to the right
+                    self.faux_wall_left_space[self.curr_turn-1, new_abs_x+1, new_abs_y] = np.uint8(0)
+                if new_abs_y - 1 >= 0: # bottom wall of the tile above
+                    self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y-1] = np.uint8(0)
+                if new_abs_x - 1 >= 0: # right wall of the tile to the left
+                    self.faux_wall_right_space[self.curr_turn-1, new_abs_x-1, new_abs_y] = np.uint8(0)
+            
+            heard_prev_idx += 1
+
+        for i in range(new_gridview.shape[0]):
+            new_abs_x = curr_location[0] + i - rel_curr_location[0]
+            if new_abs_x < 0 or new_abs_x >= self.size: continue
+            for j in range(new_gridview.shape[1]):
+                new_abs_y = curr_location[1] + j - rel_curr_location[1]
+                if new_abs_y < 0 or new_abs_y >= self.size: continue
 
                 # extract data
                 unpacked = np.unpackbits(new_gridview[i, j])
@@ -414,7 +466,7 @@ class RLManager:
                     # box up tiles never ever stepped on, except for spawn tile
                     if tile_contents != Tile.EMPTY and new_abs_x != 0 and new_abs_y != 0:
                         last_seen_turn_idx = self.last_seen_rewards[new_abs_x, new_abs_y]
-                        walls_changed_turn = min(walls_changed_turn, last_seen_turn_idx)
+                        walls_changed_turn = min(walls_changed_turn, int(last_seen_turn_idx)-2)
 
                         self.faux_wall_top_space[last_seen_turn_idx:self.curr_turn, new_abs_x, new_abs_y] = np.uint8(255)
                         self.faux_wall_left_space[last_seen_turn_idx:self.curr_turn, new_abs_x, new_abs_y] = np.uint8(255)
@@ -442,36 +494,12 @@ class RLManager:
                 if tile_scout_info == 1:
                     scout_loc = (new_abs_x, new_abs_y)
 
-        # unlock newly unheard tiles
-        heard_prev_idx = 0
-        while heard_prev_idx < 35 and self.heard_prev[heard_prev_idx][0] < 255:
-            if not any(np.equal(heard_curr,self.heard_prev[heard_prev_idx]).all(1)):
-                walls_changed_turn = min(walls_changed_turn, self.curr_turn-1)
-
-                new_abs_x = int(self.heard_prev[heard_prev_idx][0])
-                new_abs_y = int(self.heard_prev[heard_prev_idx][1])
-                
-                self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
-                self.faux_wall_left_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
-                self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
-                self.faux_wall_right_space[self.curr_turn-1, new_abs_x, new_abs_y] = np.uint8(0)
-                
-                # we know the wall on the other side too
-                if new_abs_y + 1 < self.size: # top wall of the tile below
-                    self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y+1] = np.uint8(0)
-                if new_abs_x + 1 < self.size: # left wall of the tile to the right
-                    self.faux_wall_left_space[self.curr_turn-1, new_abs_x+1, new_abs_y] = np.uint8(0)
-                if new_abs_y - 1 >= 0: # bottom wall of the tile above
-                    self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y-1] = np.uint8(0)
-                if new_abs_x - 1 >= 0: # right wall of the tile to the left
-                    self.faux_wall_right_space[self.curr_turn-1, new_abs_x-1, new_abs_y] = np.uint8(0)
-            
-            heard_prev_idx += 1
-        
         if scout_loc == (-1, -1):
             # lock up current heard tiles
             heard_curr_idx = 0
             while heard_curr_idx < 35 and heard_curr[heard_curr_idx][0] < 255:
+                walls_changed_turn = min(walls_changed_turn, self.curr_turn-2)
+
                 new_abs_x = int(heard_curr[heard_curr_idx][0])
                 new_abs_y = int(heard_curr[heard_curr_idx][1])
 
@@ -501,47 +529,49 @@ class RLManager:
 
                     if i >= new_top_left[0] and i <= new_bottom_right[0] \
                         and j >= new_top_left[1] and j <= new_bottom_right[1]:
-                        walls_changed_turn = min(walls_changed_turn, self.curr_turn-2)
+                        walls_changed_turn = min(walls_changed_turn, self.curr_turn-4)
                         new_faux_x_idx = i - new_top_left[0]
                         new_faux_y_idx = j - new_top_left[1]
 
-                        if new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx]
-                        if new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_left_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx]
-                        if new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx]
-                        if new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_right_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx]
+                        if self.curr_turn > 0:
+                            if new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx]
+                            if new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_left_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx]
+                            if new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx]
+                            if new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_right_space[self.curr_turn-1, new_abs_x, new_abs_y] = new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx]
 
-                        # we know the wall on the other side too
-                        if new_abs_y + 1 < self.size and new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx] > 0: # top wall of the tile below
-                            self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y+1] = new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx]
-                        if new_abs_x + 1 < self.size and new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx] > 0: # left wall of the tile to the right
-                            self.faux_wall_left_space[self.curr_turn-1, new_abs_x+1, new_abs_y] = new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx]
-                        if new_abs_y - 1 >= 0 and new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx] > 0: # bottom wall of the tile above
-                            self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y-1] = new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx]
-                        if new_abs_x - 1 >= 0 and new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx] > 0: # right wall of the tile to the left
-                            self.faux_wall_right_space[self.curr_turn-1, new_abs_x-1, new_abs_y] = new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx]
+                            # we know the wall on the other side too
+                            if new_abs_y + 1 < self.size and new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx] > 0: # top wall of the tile below
+                                self.faux_wall_top_space[self.curr_turn-1, new_abs_x, new_abs_y+1] = new_faux_walls_1[2][new_faux_x_idx, new_faux_y_idx]
+                            if new_abs_x + 1 < self.size and new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx] > 0: # left wall of the tile to the right
+                                self.faux_wall_left_space[self.curr_turn-1, new_abs_x+1, new_abs_y] = new_faux_walls_1[3][new_faux_x_idx, new_faux_y_idx]
+                            if new_abs_y - 1 >= 0 and new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx] > 0: # bottom wall of the tile above
+                                self.faux_wall_bottom_space[self.curr_turn-1, new_abs_x, new_abs_y-1] = new_faux_walls_1[0][new_faux_x_idx, new_faux_y_idx]
+                            if new_abs_x - 1 >= 0 and new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx] > 0: # right wall of the tile to the left
+                                self.faux_wall_right_space[self.curr_turn-1, new_abs_x-1, new_abs_y] = new_faux_walls_1[1][new_faux_x_idx, new_faux_y_idx]
                         
-                        if new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_top_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx]
-                        if new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_left_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx]
-                        if new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_bottom_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx]
-                        if new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx] > 0:
-                            self.faux_wall_right_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx]
+                        if self.curr_turn > 1:
+                            if new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_top_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx]
+                            if new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_left_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx]
+                            if new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_bottom_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx]
+                            if new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx] > 0:
+                                self.faux_wall_right_space[self.curr_turn-2, new_abs_x, new_abs_y] = new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx]
 
-                        # we know the wall on the other side too
-                        if new_abs_y + 1 < self.size and new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx] > 0: # top wall of the tile below
-                            self.faux_wall_top_space[self.curr_turn-2, new_abs_x, new_abs_y+1] = new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx]
-                        if new_abs_x + 1 < self.size and new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx] > 0: # left wall of the tile to the right
-                            self.faux_wall_left_space[self.curr_turn-2, new_abs_x+1, new_abs_y] = new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx]
-                        if new_abs_y - 1 >= 0 and new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx] > 0: # bottom wall of the tile above
-                            self.faux_wall_bottom_space[self.curr_turn-2, new_abs_x, new_abs_y-1] = new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx]
-                        if new_abs_x - 1 >= 0 and new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx] > 0: # right wall of the tile to the left
-                            self.faux_wall_right_space[self.curr_turn-2, new_abs_x-1, new_abs_y] = new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx]
+                            # we know the wall on the other side too
+                            if new_abs_y + 1 < self.size and new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx] > 0: # top wall of the tile below
+                                self.faux_wall_top_space[self.curr_turn-2, new_abs_x, new_abs_y+1] = new_faux_walls_2[2][new_faux_x_idx, new_faux_y_idx]
+                            if new_abs_x + 1 < self.size and new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx] > 0: # left wall of the tile to the right
+                                self.faux_wall_left_space[self.curr_turn-2, new_abs_x+1, new_abs_y] = new_faux_walls_2[3][new_faux_x_idx, new_faux_y_idx]
+                            if new_abs_y - 1 >= 0 and new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx] > 0: # bottom wall of the tile above
+                                self.faux_wall_bottom_space[self.curr_turn-2, new_abs_x, new_abs_y-1] = new_faux_walls_2[0][new_faux_x_idx, new_faux_y_idx]
+                            if new_abs_x - 1 >= 0 and new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx] > 0: # right wall of the tile to the left
+                                self.faux_wall_right_space[self.curr_turn-2, new_abs_x-1, new_abs_y] = new_faux_walls_2[1][new_faux_x_idx, new_faux_y_idx]
         
         self.heard_prev = heard_curr
         return scout_loc, walls_changed_turn, curr_guard_locs
@@ -552,10 +582,17 @@ class RLManager:
         apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[turn_idx])
         apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[turn_idx])
         
-        next_apparent_wall_top_space = np.logical_or(self.obs_wall_top_space, self.faux_wall_top_space[turn_idx+1])
-        next_apparent_wall_left_space = np.logical_or(self.obs_wall_left_space, self.faux_wall_left_space[turn_idx+1])
-        next_apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[turn_idx+1])
-        next_apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[turn_idx+1])
+        next_turn_idx = min(100, turn_idx+1)
+        next_apparent_wall_top_space = np.logical_or(self.obs_wall_top_space, self.faux_wall_top_space[next_turn_idx])
+        next_apparent_wall_left_space = np.logical_or(self.obs_wall_left_space, self.faux_wall_left_space[next_turn_idx])
+        next_apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[next_turn_idx])
+        next_apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[next_turn_idx])
+
+        next_next_turn_idx = min(100, turn_idx+2)
+        next_next_apparent_wall_top_space = np.logical_or(self.obs_wall_top_space, self.faux_wall_top_space[next_next_turn_idx])
+        next_next_apparent_wall_left_space = np.logical_or(self.obs_wall_left_space, self.faux_wall_left_space[next_next_turn_idx])
+        next_next_apparent_wall_bottom_space = np.logical_or(self.obs_wall_bottom_space, self.faux_wall_bottom_space[next_next_turn_idx])
+        next_next_apparent_wall_right_space = np.logical_or(self.obs_wall_right_space, self.faux_wall_right_space[next_next_turn_idx])
 
         self.scout_loc = scout_loc
         self.last_seen_turn = turn_idx
@@ -569,16 +606,36 @@ class RLManager:
         v_neg_y_idx = y_idx - 1
         v_pos_x_idx = x_idx
         v_pos_y_idx = y_idx + 1
-        v_can_neg = False if next_apparent_wall_top_space[x_idx, y_idx] else True
-        v_can_pos = False if next_apparent_wall_bottom_space[x_idx, y_idx] else True
+        v_can_neg = False if apparent_wall_top_space[x_idx, y_idx] \
+                or (next_apparent_wall_top_space[v_neg_x_idx, v_neg_y_idx] and next_apparent_wall_bottom_space[v_neg_x_idx, v_neg_y_idx]
+                    and next_next_apparent_wall_left_space[v_neg_x_idx, v_neg_y_idx] and next_next_apparent_wall_right_space[v_neg_x_idx, v_neg_y_idx]) \
+            else True
+        v_can_pos = False if apparent_wall_bottom_space[x_idx, y_idx] \
+                or (next_apparent_wall_top_space[v_pos_x_idx, v_pos_y_idx] and next_apparent_wall_bottom_space[v_pos_x_idx, v_pos_y_idx]
+                    and next_next_apparent_wall_left_space[v_pos_x_idx, v_pos_y_idx] and next_next_apparent_wall_right_space[v_pos_x_idx, v_pos_y_idx]) \
+            else True
+        v_can_turn_1 = False if next_apparent_wall_left_space[x_idx, y_idx] else True
+        v_can_turn_2 = False if next_apparent_wall_right_space[x_idx, y_idx] else True
+        v_can_turn = (v_can_turn_1 or v_can_turn_2)
         v_can_exist = False if apparent_wall_top_space[x_idx, y_idx] and apparent_wall_bottom_space[x_idx, y_idx] else True
 
         h_neg_x_idx = turn_x_idx - 1
+        h_true_neg_x_idx = x_idx - 1
         h_neg_y_idx = y_idx
         h_pos_x_idx = turn_x_idx + 1
+        h_true_pos_x_idx = x_idx + 1
         h_pos_y_idx = y_idx
-        h_can_neg = False if next_apparent_wall_left_space[x_idx, y_idx] else True
-        h_can_pos = False if next_apparent_wall_right_space[x_idx, y_idx] else True
+        h_can_neg = False if apparent_wall_left_space[x_idx, y_idx] \
+                or (next_apparent_wall_left_space[h_true_neg_x_idx, h_neg_y_idx] and next_apparent_wall_right_space[h_true_neg_x_idx, h_neg_y_idx]
+                    and next_next_apparent_wall_top_space[h_true_neg_x_idx, h_neg_y_idx] and next_next_apparent_wall_bottom_space[h_true_neg_x_idx, h_neg_y_idx]) \
+            else True
+        h_can_pos = False if apparent_wall_right_space[x_idx, y_idx] \
+                or (next_apparent_wall_left_space[h_true_pos_x_idx, h_pos_y_idx] and next_apparent_wall_right_space[h_true_pos_x_idx, h_pos_y_idx]
+                    and next_next_apparent_wall_top_space[h_true_pos_x_idx, h_pos_y_idx] and next_next_apparent_wall_bottom_space[h_true_pos_x_idx, h_pos_y_idx]) \
+            else True
+        h_can_turn_1 = False if next_apparent_wall_top_space[x_idx, y_idx] else True
+        h_can_turn_2 = False if next_apparent_wall_bottom_space[x_idx, y_idx] else True
+        h_can_turn = (h_can_turn_1 or h_can_turn_2)
         h_can_exist = False if apparent_wall_left_space[x_idx, y_idx] and apparent_wall_right_space[x_idx, y_idx] else True
 
         move_one_dir_prob = (self.REVERSE_PROB + self.FORWARD_PROB)/2
@@ -588,11 +645,12 @@ class RLManager:
             
             total_prob = \
                 (v_can_neg + v_can_pos) * move_one_dir_prob + \
-                h_can_exist * self.TURN_PROB
+                v_can_turn * self.TURN_PROB
             
-            if v_can_neg: self.scout_prob[turn_idx, x_idx, y_idx, 0] += move_one_dir_prob/total_prob * total_dir_prob
-            if v_can_pos: self.scout_prob[turn_idx, x_idx, y_idx, 1] += move_one_dir_prob/total_prob * total_dir_prob
-            if h_can_exist: self.scout_prob[turn_idx, x_idx, y_idx, 2] += self.TURN_PROB/total_prob * total_dir_prob
+            if total_prob > 0:
+                if v_can_neg: self.scout_prob[turn_idx, x_idx, y_idx, 0] += move_one_dir_prob/total_prob * total_dir_prob
+                if v_can_pos: self.scout_prob[turn_idx, x_idx, y_idx, 1] += move_one_dir_prob/total_prob * total_dir_prob
+                if v_can_turn: self.scout_prob[turn_idx, x_idx, y_idx, 2] += self.TURN_PROB/total_prob * total_dir_prob
 
         # process horizontal direction
         if h_can_exist:
@@ -600,11 +658,12 @@ class RLManager:
             
             total_prob = \
                 (h_can_neg + h_can_pos) * move_one_dir_prob + \
-                v_can_exist * self.TURN_PROB
+                h_can_turn * self.TURN_PROB
             
-            if h_can_neg: self.scout_prob[turn_idx, turn_x_idx, y_idx, 0] += move_one_dir_prob/total_prob * total_dir_prob
-            if h_can_pos: self.scout_prob[turn_idx, turn_x_idx, y_idx, 1] += move_one_dir_prob/total_prob * total_dir_prob
-            if v_can_exist: self.scout_prob[turn_idx, turn_x_idx, y_idx, 2] += self.TURN_PROB/total_prob * total_dir_prob
+            if total_prob > 0:
+                if h_can_neg: self.scout_prob[turn_idx, turn_x_idx, y_idx, 0] += move_one_dir_prob/total_prob * total_dir_prob
+                if h_can_pos: self.scout_prob[turn_idx, turn_x_idx, y_idx, 1] += move_one_dir_prob/total_prob * total_dir_prob
+                if h_can_turn: self.scout_prob[turn_idx, turn_x_idx, y_idx, 2] += self.TURN_PROB/total_prob * total_dir_prob
 
     def calc_fr_turn(self, turn_idx):
         start_turn = max(self.last_seen_turn+1, turn_idx)
@@ -617,6 +676,8 @@ class RLManager:
             for x in range(self.size):
                 for y in range(self.size):
                     self.calc_next_repeated(turn, x, y)
+
+            # self.visualise(turn)
     
     def astar_next_action(self, observation, dst_loc, curr_guard_locs):
         ego_loc = list(observation["location"])
@@ -672,24 +733,43 @@ class RLManager:
         
         return action
 
-    def visualise(self):
-        if self.curr_turn == 0:
-            out_img = np.full((640,640), 0, dtype=np.float32)
-            out_img = cv2.resize(out_img, (640,640), interpolation=cv2.INTER_NEAREST)
-            cv2.imshow("Scout Probability", out_img)
-            cv2.waitKey(10)
-            cv2.imshow("Scout Probability", out_img)
-            cv2.waitKey(10)
+    def visualise(self, turn_idx):
+        # if self.curr_turn == 0:
+        #     out_img = np.full((640,640), 0, dtype=np.float32)
+        #     out_img = cv2.resize(out_img, (640,640), interpolation=cv2.INTER_NEAREST)
+        #     cv2.imshow("Scout Probability", out_img)
+        #     cv2.waitKey(10)
+        #     cv2.imshow("Scout Probability", out_img)
+        #     cv2.waitKey(10)
             # sleep(5)
 
         # out_img = self.repeated_prob[self.curr_turn]
-        out_img = np.sum(self.scout_prob[self.curr_turn, :16], axis=2) + np.sum(self.scout_prob[self.curr_turn, 16:], axis=2)
+        out_img = np.sum(self.scout_prob[turn_idx, :16], axis=2) + np.sum(self.scout_prob[turn_idx, 16:], axis=2)
+        total_sum = np.sum(out_img)
         print(np.sum(out_img))
         out_img = np.transpose(out_img)
+        # if np.max(out_img) > 0:
+        #     print(self.faux_wall_top_space[self.curr_turn, *self.scout_loc])
+        #     print(self.faux_wall_left_space[self.curr_turn, *self.scout_loc])
+        #     print(self.faux_wall_bottom_space[self.curr_turn, *self.scout_loc])
+        #     print(self.faux_wall_right_space[self.curr_turn, *self.scout_loc])
+        # else:
         out_img *= 1/np.max(out_img)
         out_img = cv2.resize(out_img, (640,640), interpolation=cv2.INTER_NEAREST)
         cv2.imshow("Scout Probability", out_img)
-        cv2.waitKey(1)
+        if total_sum < 0.9:
+            print(self.curr_turn)
+            cv2.waitKey(0)
+        else:
+            # print()
+            # print(self.curr_turn, turn_idx)
+            # print(self.scout_prob[self.curr_turn-1, *self.scout_loc])
+            # print(self.scout_prob[self.curr_turn-1, self.scout_loc[0]+16, self.scout_loc[1]])
+            # print(self.faux_wall_top_space[self.curr_turn-1, *self.scout_loc])
+            # print(self.faux_wall_left_space[self.curr_turn-1, *self.scout_loc])
+            # print(self.faux_wall_bottom_space[self.curr_turn-1, *self.scout_loc])
+            # print(self.faux_wall_right_space[self.curr_turn-1, *self.scout_loc])
+            cv2.waitKey(10)
 
     def rl(self, observation: dict[str, int | list[int]]) -> int:
         """Gets the next action for the agent, based on the observation.
@@ -721,9 +801,10 @@ class RLManager:
             ))
         else:
             self.seen_scout(scout_loc, self.curr_turn)
+            # self.visualise(self.curr_turn)
             dst_loc = scout_loc
 
-        self.visualise()
+        self.visualise(self.curr_turn)
 
         self.action = self.astar_next_action(observation, dst_loc, curr_guard_locs)
 
