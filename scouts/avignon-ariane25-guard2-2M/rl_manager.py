@@ -28,7 +28,7 @@ class RLManager:
     def __init__(self):
         # This is where you can initialize your model and any static
         # configurations.
-        self.model = DQN.load("ensemble_scouts/avignon-ariane20-4M-backAndForth/avignon-ariane20_noGuards")
+        self.model = DQN.load("scouts/avignon-ariane25-guard2-2M/avignon-ariane25-guard2_guard_2000000_steps")
         self.size = 16
 
         # observation space
@@ -74,7 +74,8 @@ class RLManager:
         curr_direction = np.array(observation["direction"], dtype=np.int64) # right down left up
         curr_location = np.array(observation["location"], dtype=np.int64)
 
-        self.obs_repeat_space[*curr_location] += np.minimum(0.1, 1 - self.obs_repeat_space[*curr_location])
+        if not np.array_equal(self.last_pos, curr_location):
+            self.obs_repeat_space[*curr_location] += np.minimum(0.1, 1 - self.obs_repeat_space[*curr_location])
 
         if np.array_equal(self.last_last_pos, curr_location) and not np.array_equal(self.last_pos, curr_location):
             # entering ane exiting a tile the same way incurs double penalty
@@ -86,7 +87,7 @@ class RLManager:
                 self.last_pos = curr_location.copy()
         else:
             self.last_pos = curr_location.copy()
-
+        
         # rotate clockwise so absolute north faces up
         new_gridview = np.rot90(new_gridview, k=curr_direction)
 
@@ -208,7 +209,7 @@ class RLManager:
                 output_obs[output_obs_idx] = self.GUARD_DISCRETE_LEVELS[new_guard_space[ori_x, ori_y]]
                 output_obs_idx += 1
         
-        # last action was turning
+        # last 2 actions were turning
         if self.consecutive_turns >= 1:
             output_obs[output_obs_idx] = 1
         output_obs_idx += 1
@@ -227,15 +228,7 @@ class RLManager:
         processed_obs = output_obs
 
         # Your inference code goes here.
-        # action, _states = self.model.predict(processed_obs, deterministic=True)
-        action_order, _states = self.model.predict(processed_obs, deterministic=True)
-        print(action_order)
-        action_order = np.flip(action_order.argsort())
-        action_idx = 0
-        action = action_order[action_idx]
-        while action in (Action.LEFT, Action.RIGHT) and self.obs_wall_left_space[*curr_location] > 0 and self.obs_wall_right_space[*curr_location] > 0:
-            action_idx += 1
-            action = action_order[action_idx]
+        action, _states = self.model.predict(processed_obs, deterministic=True)
 
         if action in (Action.LEFT, Action.RIGHT,):
             self.consecutive_turns += 1
