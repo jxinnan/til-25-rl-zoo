@@ -230,6 +230,7 @@ class RLManager:
         # action, _states = self.model.predict(processed_obs, deterministic=True)
         action_order, _states = self.model.predict(processed_obs, deterministic=True)
         print(action_order)
+        
         action_order = np.flip(action_order.argsort())
         action_idx = 0
         action = action_order[action_idx]

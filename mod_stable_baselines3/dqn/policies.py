@@ -75,7 +75,8 @@ class QNetwork(BasePolicy):
         # return action
     
         # NEW
-        return q_values.argsort(dim=1, descending=True).reshape(-1)
+        # return q_values.argsort(dim=1, descending=True).reshape(-1)
+        return q_values.reshape(-1)
 
     def _get_constructor_parameters(self) -> dict[str, Any]:
         data = super()._get_constructor_parameters()
