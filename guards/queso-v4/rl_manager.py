@@ -601,9 +601,9 @@ class RLManager:
                 tile_guard_info = unpacked[4]
                 if tile_guard_info == 1 and not np.array_equal(np.array((new_abs_x, new_abs_y), dtype=np.uint8), curr_location):
                     # check if adjacent
-                    if len(self.astar_find_path((new_abs_x, new_abs_y), (self.guard_loc2[0], self.guard_loc2[1]), False)) == 1 \
-                        or len(self.astar_find_path((new_abs_x+16, new_abs_y), (self.guard_loc2[0], self.guard_loc2[1]), False)) == 1:
-                        self.guard_loc1[0] = new_abs_x
+                    if self.guard_loc2[0] < 255 and (len(self.astar_find_path((new_abs_x, new_abs_y), (self.guard_loc2[0], self.guard_loc2[1]), False)) == 1 \
+                        or len(self.astar_find_path((new_abs_x+16, new_abs_y), (self.guard_loc2[0], self.guard_loc2[1]), False)) == 1):
+                        self.guard_loc2[0] = new_abs_x
                         self.guard_loc2[1] = new_abs_y
                         self.guard_loc2[2] = self.curr_turn
                     else:
@@ -808,8 +808,8 @@ class RLManager:
                 turn_diff = self.curr_turn - self.guard_loc1[2]
                 block_prob = self.GUARD_GAMMA ** turn_diff
                 if block_prob > random.random():
-                    curr_abs_x = self.guard_loc1[0]
-                    curr_abs_y = self.guard_loc1[1]
+                    curr_abs_x = int(self.guard_loc1[0])
+                    curr_abs_y = int(self.guard_loc1[1])
                     if astar_half_grid[curr_abs_x, curr_abs_y, 0] == 0: # no top wall
                         astar_half_grid[curr_abs_x, curr_abs_y-1, :] = 255
 
@@ -878,8 +878,8 @@ class RLManager:
                 turn_diff = self.curr_turn - self.guard_loc2[2]
                 block_prob = self.GUARD_GAMMA ** turn_diff
                 if block_prob > random.random():
-                    curr_abs_x = self.guard_loc2[0]
-                    curr_abs_y = self.guard_loc2[1]
+                    curr_abs_x = int(self.guard_loc2[0])
+                    curr_abs_y = int(self.guard_loc2[1])
                     if astar_half_grid[curr_abs_x, curr_abs_y, 0] == 0: # no top wall
                         astar_half_grid[curr_abs_x, curr_abs_y-1, :] = 255
 
@@ -1045,6 +1045,8 @@ class RLManager:
                 np.argmax(overall_prob),
                 overall_prob.shape,
             ))
+            if np.max(overall_prob) == 0:
+                print("Help")
         else:
             self.seen_scout(scout_loc, self.curr_turn)
             dst_loc = scout_loc
