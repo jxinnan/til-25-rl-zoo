@@ -1,6 +1,7 @@
 # .gitignore tells Git not to track these files.
 stable_baselines3
 sb3_contrib
+ensemble_$*.npz
 
 # Large files like model weights, training data, and results should be ignored.
 # **/models/
