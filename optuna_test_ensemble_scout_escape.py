@@ -337,7 +337,7 @@ def objective(trial):
             "weights": p,
         },
         no_of_matches=100,
-        test_with_guards=False,
+        test_with_guards=True,
         save=False,
     )
 
