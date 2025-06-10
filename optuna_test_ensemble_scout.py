@@ -2,7 +2,9 @@ import argparse
 from importlib import import_module
 from itertools import combinations
 
+import matplotlib.pyplot as plt
 import numpy as np
+import optuna
 from tqdm import tqdm
 
 from til_environment import gridworld
@@ -176,6 +178,8 @@ def test_scout(scout_name, scout_manager_kwargs = {}, no_of_matches = 100, test_
             total_guard_rewards[guard_idx, :, seed_idx] = round_rewards
             guard_ep_len[guard_idx, seed_idx] = ep_len
             env.close()
+    
+    return np.mean(total_noguard_rewards[0]) + np.mean(total_noguard_rewards[1]) * 4 - (len(noguard_ep_len[noguard_ep_len < 100])/len(noguard_ep_len)) * 100
 
     # print("\nNo Guards")
 
@@ -195,46 +199,46 @@ def test_scout(scout_name, scout_manager_kwargs = {}, no_of_matches = 100, test_
     #     ]
     # ))
 
-    print("\nNo Guards")
-    print(",".join(
-        [
-                ",".join([
-                    str(np.mean(rew_sum)),
-                    str(np.var(rew_sum)),
-                    str(np.min(rew_sum)),
-                    str(np.max(rew_sum)),
-                ])
-            for rew_sum in total_noguard_rewards
-        ]
-        +[
-            ",".join([
-                str(np.mean(noguard_ep_len)),
-                str(np.var(noguard_ep_len)),
-                str(np.min(noguard_ep_len)),
-                str(np.max(noguard_ep_len)),
-            ])
-        ]
-    ))
+    # print("\nNo Guards")
+    # print(",".join(
+    #     [
+    #             ",".join([
+    #                 str(np.mean(rew_sum)),
+    #                 str(np.var(rew_sum)),
+    #                 str(np.min(rew_sum)),
+    #                 str(np.max(rew_sum)),
+    #             ])
+    #         for rew_sum in total_noguard_rewards
+    #     ]
+    #     +[
+    #         ",".join([
+    #             str(np.mean(noguard_ep_len)),
+    #             str(np.var(noguard_ep_len)),
+    #             str(np.min(noguard_ep_len)),
+    #             str(np.max(noguard_ep_len)),
+    #         ])
+    #     ]
+    # ))
 
-    no_guards_str = ",".join(
-        [
-                ",".join([
-                    str(np.mean(rew_sum)),
-                    str(np.var(rew_sum)),
-                    str(np.min(rew_sum)),
-                    str(np.max(rew_sum)),
-                ])
-            for rew_sum in total_noguard_rewards
-        ]
-        +[
-            ",".join([
-                str(np.mean(noguard_ep_len)),
-                str(np.var(noguard_ep_len)),
-                str(np.min(noguard_ep_len)),
-                str(np.max(noguard_ep_len)),
-            ])
-        ]
-    )
+    # no_guards_str = ",".join(
+    #     [
+    #             ",".join([
+    #                 str(np.mean(rew_sum)),
+    #                 str(np.var(rew_sum)),
+    #                 str(np.min(rew_sum)),
+    #                 str(np.max(rew_sum)),
+    #             ])
+    #         for rew_sum in total_noguard_rewards
+    #     ]
+    #     +[
+    #         ",".join([
+    #             str(np.mean(noguard_ep_len)),
+    #             str(np.var(noguard_ep_len)),
+    #             str(np.min(noguard_ep_len)),
+    #             str(np.max(noguard_ep_len)),
+    #         ])
+    #     ]
+    # )
 
     # print("\nGuards")
     # print(",".join(
@@ -252,128 +256,135 @@ def test_scout(scout_name, scout_manager_kwargs = {}, no_of_matches = 100, test_
     #         ])
     #     ]
     # ))
-    guards_strs = []
-    for guard_idx in range(len(TEST_GUARDS)):
-        print(f"\nGuard {guard_idx}")
+    # guards_strs = []
+    # for guard_idx in range(len(TEST_GUARDS)):
+    #     print(f"\nGuard {guard_idx}")
 
-        print(",".join(
-            [
-                    ",".join([
-                        str(np.mean(rew_sum)),
-                        str(np.var(rew_sum)),
-                        str(np.min(rew_sum)),
-                        str(np.max(rew_sum)),
-                    ])
-                for rew_sum in total_guard_rewards[guard_idx]
-            ]
-            +[
-                ",".join([
-                    str(np.mean(guard_ep_len[guard_idx])),
-                    str(np.var(guard_ep_len[guard_idx])),
-                    str(np.min(guard_ep_len[guard_idx])),
-                    str(np.max(guard_ep_len[guard_idx])),
-                ])
-            ]
-        ))
+    #     print(",".join(
+    #         [
+    #                 ",".join([
+    #                     str(np.mean(rew_sum)),
+    #                     str(np.var(rew_sum)),
+    #                     str(np.min(rew_sum)),
+    #                     str(np.max(rew_sum)),
+    #                 ])
+    #             for rew_sum in total_guard_rewards[guard_idx]
+    #         ]
+    #         +[
+    #             ",".join([
+    #                 str(np.mean(guard_ep_len[guard_idx])),
+    #                 str(np.var(guard_ep_len[guard_idx])),
+    #                 str(np.min(guard_ep_len[guard_idx])),
+    #                 str(np.max(guard_ep_len[guard_idx])),
+    #             ])
+    #         ]
+    #     ))
 
-        guards_strs.append(",".join(
-            [
-                    ",".join([
-                        str(np.mean(rew_sum)),
-                        str(np.var(rew_sum)),
-                        str(np.min(rew_sum)),
-                        str(np.max(rew_sum)),
-                    ])
-                for rew_sum in total_guard_rewards[guard_idx]
-            ]
-            +[
-                ",".join([
-                    str(np.mean(guard_ep_len[guard_idx])),
-                    str(np.var(guard_ep_len[guard_idx])),
-                    str(np.min(guard_ep_len[guard_idx])),
-                    str(np.max(guard_ep_len[guard_idx])),
-                ])
-            ]
-        ))
+    #     guards_strs.append(",".join(
+    #         [
+    #                 ",".join([
+    #                     str(np.mean(rew_sum)),
+    #                     str(np.var(rew_sum)),
+    #                     str(np.min(rew_sum)),
+    #                     str(np.max(rew_sum)),
+    #                 ])
+    #             for rew_sum in total_guard_rewards[guard_idx]
+    #         ]
+    #         +[
+    #             ",".join([
+    #                 str(np.mean(guard_ep_len[guard_idx])),
+    #                 str(np.var(guard_ep_len[guard_idx])),
+    #                 str(np.min(guard_ep_len[guard_idx])),
+    #                 str(np.max(guard_ep_len[guard_idx])),
+    #             ])
+    #         ]
+    #     ))
     
-    if save:
-        save_path = f"logs/test_solo_scout/{scout_name}.npz"
-        np.savez(
-            save_path,
-            total_guard_rewards=total_guard_rewards,
-            total_noguard_rewards=total_noguard_rewards,
-            noguard_ep_len=noguard_ep_len,
-            guard_ep_len=guard_ep_len,
-        )
+    # if save:
+    #     save_path = f"logs/test_solo_scout/{scout_name}.npz"
+    #     np.savez(
+    #         save_path,
+    #         total_guard_rewards=total_guard_rewards,
+    #         total_noguard_rewards=total_noguard_rewards,
+    #         noguard_ep_len=noguard_ep_len,
+    #         guard_ep_len=guard_ep_len,
+    #     )
     
-    return no_guards_str, guards_strs
+    # return no_guards_str, guards_strs
+
+VOTERS = [
+    "atlanta-8M-deadend-8M",
+    "avignon-8M",
+    "avignon-ariane4-8M",
+    "avignon-ariane20-8M",
+    "avignon-ariane24-4M",
+    "avignon-ariane24-normal-2M4",
+    "avignon-ariane25-4M",
+    "avignon-ariane25-normal-2M8",
+    "caracas-8M",
+    "caracas-ariane25-4M",
+    "chitose-6M",
+    "chitose-8M",
+]
+
+def objective(trial):
+    n = 12
+    x = []
+    for i in range(n):
+        x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
+
+    p = []
+    for i in range(n):
+        p.append(x[i] / sum(x))
+
+    for i in range(n):
+        trial.set_user_attr(f"p_{i}", p[i])
+    
+    mean_score = test_scout(
+        scout_name="trial",
+        scout_manager_kwargs={
+            "voter_register": VOTERS,
+            "weights": p,
+        },
+        no_of_matches=100,
+        test_with_guards=False,
+        save=False,
+    )
+    print(mean_score)
+
+    return 200 - mean_score
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("proc_id", type=int)
-    args = parser.parse_args()
+    # storage = optuna.storages.JournalStorage(
+    #     optuna.storages.journal.JournalFileBackend("logs/optuna/fellowship_optuna.log"),
+    # )
+    # study = optuna.create_study(
+    #     sampler=optuna.samplers.TPESampler(),
+    #     storage=storage,
+    # )
+    study = optuna.load_study(
+        study_name="fellowship_optuna2",
+        storage="mysql+pymysql://root@localhost/fellowship_optuna2",
+    )
+    study.optimize(objective, n_trials=80)
 
-    VOTERS = [
-        "atlanta-8M-deadend-8M",
-        "avignon-8M",
-        "avignon-ariane4-8M",
-        "avignon-ariane20-8M",
-        "avignon-ariane24-4M",
-        "avignon-ariane24-normal-2M4",
-        "avignon-ariane25-4M",
-        "avignon-ariane25-normal-2M8",
-        "caracas-8M",
-        "caracas-ariane25-4M",
-        "chitose-6M",
-        "chitose-8M",
-    ]
+    # print(study.best_params)
+          
+    # n = 12
+    # p = []
+    # for i in range(n):
+    #     p.append([trial.user_attrs[f"p_{i}"] for trial in study.trials])
+    # axes = plt.subplots(n, n, figsize=(20, 20))[1]
 
-    CONSTITUENCIES = [constituency for constituency in combinations(VOTERS, 3)]
+    # for i in range(n):
+    #     for j in range(n):
+    #         axes[j][i].scatter(p[i], p[j], marker=".")
+    #         axes[j][i].set_xlim(0, 1)
+    #         axes[j][i].set_ylim(0, 1)
+    #         axes[j][i].set_xlabel(f"p_{i}")
+    #         axes[j][i].set_ylabel(f"p_{j}")
 
-    SELECTED_ZONES = CONSTITUENCIES[args.proc_id * len(CONSTITUENCIES) // 20 : (args.proc_id + 1) * len(CONSTITUENCIES) // 20]
-
-    WEIGHTS = [
-        [0.2, 0.4, 0.4],
-        [0.4, 0.2, 0.4],
-        [0.4, 0.4, 0.2],
-        [0.2, 0.2, 0.6],
-        [0.2, 0.6, 0.2],
-        [0.6, 0.2, 0.2],
-    ]
-
-    CODENAME = "fellowship"
-    curr_idx = args.proc_id * len(CONSTITUENCIES) // 20 * len(WEIGHTS)
-
-    no_guard_str_list = []
-    guards_strs_list = [[] for i in range(3)]
-    logs = []
-    for zone in SELECTED_ZONES:
-        for weight in WEIGHTS:
-            scout_name = f"ensemble_${CODENAME}_${str(curr_idx).zfill(4)}"
-            manager_kwargs = {
-                "voter_register": zone,
-                "weights": weight,
-            }
-            logs.append(scout_name + str(zone) + str(weight))
-            no_guards_str, guards_strs = test_scout(scout_name, manager_kwargs)
-            no_guard_str_list.append(no_guards_str)
-            for i in range(len(guards_strs_list)):
-                guards_strs_list[i].append(guards_strs[i])
-            curr_idx += 1
-    
-    print(args.proc_id * len(CONSTITUENCIES) // 20, (args.proc_id + 1) * len(CONSTITUENCIES) // 20 - 1)
-    
-    for log in logs:
-        print(log)
-    
-    print("\nNo Guards")
-    for stroll in no_guard_str_list:
-        print(stroll)
-    
-    for i in range(len(guards_strs_list)):
-        print("\nGuard",i)
-        for stroll in guards_strs_list[i]:
-            print(stroll)
+    # plt.savefig("sampled_ps.png")
 
 if __name__ == "__main__":
     main()
