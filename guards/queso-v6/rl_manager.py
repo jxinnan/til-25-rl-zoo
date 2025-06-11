@@ -595,7 +595,7 @@ class RLManager:
                 tile_guard_info = unpacked[4]
                 # if tile_guard_info == 1 and abs(i - rel_curr_location[0]) <= 1 and abs(j - rel_curr_location[1]) <= 1 and not np.array_equal(np.array((new_abs_x, new_abs_y), dtype=np.uint8), curr_location):
                 #     curr_guard_locs.append((new_abs_x, new_abs_y))
-                if tile_guard_info == 1:
+                if tile_guard_info == 1 and not np.array_equal(np.array((new_abs_x, new_abs_y), dtype=np.uint8), curr_location):
                     self.obs_guard_space[new_abs_x, new_abs_y] += 1
                 else:
                     self.obs_guard_space[new_abs_x, new_abs_y] = 0
