@@ -798,6 +798,14 @@ class RLManager:
         
         for guard_loc in np.argwhere(self.obs_guard_space >= 3):
             astar_half_grid[guard_loc[0], guard_loc[1], :] = 255
+            if guard_loc[0] - 1 >= 0: # right wall on the left tile
+                astar_half_grid[guard_loc[0]-1, guard_loc[1], 3] = 255
+            if guard_loc[0] + 1 < self.size: # left wall on the right tile
+                astar_half_grid[guard_loc[0]+1, guard_loc[1], 1] = 255
+            if guard_loc[1] - 1 >= 0: # bottom wall on top tile
+                astar_half_grid[guard_loc[0], guard_loc[1]-1, 2] = 255
+            if guard_loc[1] + 1 < self.size: # top wall on bottom tile
+                astar_half_grid[guard_loc[0], guard_loc[1]+1, 0] = 255
         
         astar_grid = np.tile(astar_half_grid, (2,1,1))
         astar_path = astar.find_path(astar_grid, ego_loc, dst_loc)
