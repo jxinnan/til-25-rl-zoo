@@ -1,6 +1,6 @@
 # Zoo :circus_tent:
 
-**Update: Documentation was not maintained towards the end. For the finals submission, refer to [`finals_v2v10_lessmask.zip`](./finals_v2v10_lessmask.zip).**
+**Update: Documentation was not maintained towards the end. For train scripts, refer to [`til-25-rl-testbed`](https://github.com/jxinnan/til-25-rl-testbed). For the finals submission, refer to [`finals_v2v10_lessmask.zip on Google Drive`](https://drive.google.com/file/d/1LeqxcAWzHNoSWitO3y-vNyQlOq2Fsc1j/view?usp=sharing).**
 
 `uv run test_solo_scout.py [-n NO_OF_MATCHES] [-g TEST_WITH_GUARDS] [--hybrid HYBRID] [-s SAVE_LOG] scout_name`
 
