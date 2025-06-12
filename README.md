@@ -1,5 +1,7 @@
 # Zoo :circus_tent:
 
+**Update: Documentation was not maintained towards the end. For the finals submission, refer to [`finals_v2v10_lessmask.zip`](./finals_v2v10_lessmask.zip).**
+
 `uv run test_solo_scout.py [-n NO_OF_MATCHES] [-g TEST_WITH_GUARDS] [--hybrid HYBRID] [-s SAVE_LOG] scout_name`
 
 Check that your imports and filepaths in `rl_manager.py` will work when called from the parent directory. Run with `-n 3` to test if it works.
