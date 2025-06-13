@@ -35,10 +35,10 @@ def main():
     # print(total_noguard_rewards.shape)
     # print(np.argmax(total_noguard_rewards[2]))
 
-    print(
-        np.min(total_noguard_rewards[0][np.argwhere(noguard_ep_len == 100)]),
-        np.min(total_noguard_rewards[1][np.argwhere(noguard_ep_len == 100)])
-    )
+    # print(
+    #     np.min(total_noguard_rewards[0][np.argwhere(noguard_ep_len == 100)]),
+    #     np.min(total_noguard_rewards[1][np.argwhere(noguard_ep_len == 100)])
+    # )
 
     # print()
     # print(np.argwhere(total_noguard_rewards[0] < 15))
@@ -68,17 +68,17 @@ def main():
         7 "custom_SEE_NEW",
     ]"""
 
-    # target_metric = total_guard_rewards[0][6]
-    # comparison = target_metric == 1
-    # interesting_seeds = []
-    # for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
-    #     interesting_seeds.append((tup[0], guard_ep_len[0][tup[0]], total_guard_rewards[0][0][tup[0]]+total_guard_rewards[0][1][tup[0]]))
-    #     # interesting_seeds.append(tup[0])
-    #     # print(tup[0], tup[1])
+    target_metric = total_guard_rewards[0][6]
+    comparison = target_metric < 1
+    interesting_seeds = []
+    for tup in zip(np.argwhere(comparison), target_metric[np.argwhere(comparison)]):
+        interesting_seeds.append((tup[0], guard_ep_len[0][tup[0]], total_guard_rewards[0][0][tup[0]]+total_guard_rewards[0][1][tup[0]]))
+        # interesting_seeds.append(tup[0])
+        # print(tup[0], tup[1])
     
-    # for seed in sorted(interesting_seeds, key = lambda x : x[2], reverse=False):
-    #     if seed[2] > 20:
-    #         print(seed)
+    for seed in sorted(interesting_seeds, key = lambda x : x[2], reverse=True):
+        if seed[1] < 20:
+            print(seed)
 
 if __name__ == "__main__":
     main()
